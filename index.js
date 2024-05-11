@@ -46,7 +46,7 @@ async function run() {
         res.send(result)
     })
 
-    //jobs by the specific user
+    //jobs by the specific owner
     app.get('/jobs/:email', async(req, res)=>{
       const email = req.params.email;
       const query = {'jobOwner.email' : email}
@@ -92,6 +92,13 @@ async function run() {
       res.send(result)
     })
 
+     //jobs by the specific user who applied a job
+     app.get('/applied-jobs/:email', async(req, res)=>{
+      const email = req.params.email;
+      const query = {email}
+      const result = await appliedCollection.find(query).toArray()
+      res.send(result)
+     })
     app.get('/applied-jobs', async(req, res)=>{
       const result = await appliedCollection.find().toArray()
       res.send(result)
