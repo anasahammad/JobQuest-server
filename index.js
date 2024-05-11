@@ -54,11 +54,34 @@ async function run() {
       res.send(result)
     })
 
+    //get a job by id
+    app.get('/job/:id', async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await jobsCollection.findOne(query)
+      res.send(result)
+    })
     //delete a specific job
     app.delete('/jobs/:id', async(req, res)=>{
       const id = req.params.id;
       const filter = {_id: new ObjectId(id)}
       const result = await jobsCollection.deleteOne(filter)
+      res.send(result)
+    })
+
+    //update a specific job
+    app.patch('/job/:id', async(req, res)=>{
+      const id = req.params.id;
+      const jobData = req.body;
+      console.log(jobData);
+      const query = {_id: new ObjectId(id)}
+      const options = {upsert: true}
+      const updateJob = {
+        $set: {
+          ...jobData
+        }
+      }
+      const result = await jobsCollection.updateOne(query, updateJob, options)
       res.send(result)
     })
     //get all applied jobs from the database
