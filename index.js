@@ -54,6 +54,13 @@ async function run() {
       res.send(result)
     })
 
+    //delete a specific job
+    app.delete('/jobs/:id', async(req, res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const result = await jobsCollection.deleteOne(filter)
+      res.send(result)
+    })
     //get all applied jobs from the database
     app.post('/applied', async(req, res)=>{
       const appliedJob = req.body;
