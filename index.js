@@ -87,7 +87,15 @@ async function run() {
     //get all applied jobs from the database
     app.post('/applied', async(req, res)=>{
       const appliedJob = req.body;
-      console.log(appliedJob);
+      
+      const query = {
+        email : appliedJob.email,
+        jobId : appliedJob.jobId
+      }
+      const alreadyApplied = await appliedCollection.findOne(query)
+      if(alreadyApplied){
+        return res.status(400).send("You have already applied on this job")
+      }
       const result = await appliedCollection.insertOne(appliedJob)
       res.send(result)
     })
