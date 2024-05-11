@@ -97,6 +97,14 @@ async function run() {
         return res.status(400).send("You have already applied on this job")
       }
       const result = await appliedCollection.insertOne(appliedJob)
+
+      //update the applicants number
+      const updateApplicants = {
+        $inc: {applicants : 1}
+      }
+      const updateQuery = {_id: new ObjectId(appliedJob.jobId)}
+      const updateApplicantsNumber = await jobsCollection.updateOne(updateQuery, updateApplicants)
+      
       res.send(result)
     })
 
