@@ -2,7 +2,7 @@ const express = require('express');
 const app = express()
 const cors = require('cors');
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000
 
 //anasahammad
@@ -46,6 +46,13 @@ async function run() {
         res.send(result)
     })
 
+    //jobs by the specific user
+    app.get('/jobs/:email', async(req, res)=>{
+      const email = req.params.email;
+      const query = {'jobOwner.email' : email}
+      const result = await jobsCollection.find(query).toArray()
+      res.send(result)
+    })
 
     //get all applied jobs from the database
     app.post('/applied', async(req, res)=>{
