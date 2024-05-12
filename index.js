@@ -105,6 +105,7 @@ async function run() {
       const updateQuery = {_id: new ObjectId(appliedJob.jobId)}
       const updateApplicantsNumber = await jobsCollection.updateOne(updateQuery, updateApplicants)
       
+
       res.send(result)
     })
 
@@ -112,9 +113,13 @@ async function run() {
      app.get('/applied-jobs/:email', async(req, res)=>{
       const email = req.params.email;
       const query = {email}
+      const filter = req.query.filter;
+     
+      if(filter) query.category = filter
       const result = await appliedCollection.find(query).toArray()
       res.send(result)
      })
+
     app.get('/applied-jobs', async(req, res)=>{
       const result = await appliedCollection.find().toArray()
       res.send(result)
