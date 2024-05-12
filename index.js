@@ -49,8 +49,10 @@ async function run() {
     app.get('/jobs', async(req, res)=>{
       const page = parseInt(req.query.page) - 1;
       const size = parseInt(req.query.size);
-      
-        const result = await jobsCollection.find().skip(page * size).limit(size).toArray()
+      const filter = req.query.filter;
+      let query = {}
+      if(filter) query.category = filter
+        const result = await jobsCollection.find(query).skip(page * size).limit(size).toArray()
 
         res.send(result)
     })
