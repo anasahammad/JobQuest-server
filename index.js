@@ -33,6 +33,12 @@ async function run() {
     const jobsCollection = client.db('jobquest').collection('alljobs')
     const appliedCollection = client.db('jobquest').collection('appliedJobs')
 
+
+    //pagination
+    app.get('/counts', async(req, res)=>{
+      const count = await jobsCollection.countDocuments()
+      res.send({count})
+    })
     //post a job in data
     app.post('/job', async(req, res)=>{
         const jobData = req.body;
@@ -41,7 +47,10 @@ async function run() {
     })
     //get all jobs from the database
     app.get('/jobs', async(req, res)=>{
-        const result = await jobsCollection.find().toArray()
+      const page = parseInt(req.query.page) - 1;
+      const size = parseInt(req.query.size);
+      
+        const result = await jobsCollection.find().skip(page * size).limit(size).toArray()
 
         res.send(result)
     })
