@@ -50,7 +50,10 @@ async function run() {
       const page = parseInt(req.query.page) - 1;
       const size = parseInt(req.query.size);
       const filter = req.query.filter;
-      let query = {}
+      const search = req.query.search
+      let query = {
+        jobTitle: {$regex : search, $options: 'i'}
+      }
       if(filter) query.category = filter
         const result = await jobsCollection.find(query).skip(page * size).limit(size).toArray()
 
