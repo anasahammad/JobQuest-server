@@ -15,9 +15,25 @@ app.use(cors({
   optionsSuccessStatus: 200
  }))
 app.use(express.json())
+app.use(cookieParser())
 
 
-
+ //Token verify
+ 
+ const verifyToken = (req, res, next)=>{
+  const token = req?.cookies?.token;
+  if(!token){
+    return res.status(401).send({message: 'unauthorized access'})
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
+    if(err){
+      return res.status(401).send({message: "unauthorized access"})
+    }
+    req.user = decoded
+    next()
+  })
+ 
+ }
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.goboxhh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -81,8 +97,11 @@ async function run() {
     })
 
     //jobs by the specific owner
-    app.get('/jobs/:email', async(req, res)=>{
+    app.get('/jobs/:email', verifyToken,  async(req, res)=>{
       const email = req.params.email;
+      if(req?.params.email !== req.user?.email){
+        return res.status(403).send({message: 'forbidden access'})
+      }
       const query = {'jobOwner.email' : email}
       const result = await jobsCollection.find(query).toArray()
       res.send(result)
@@ -146,8 +165,11 @@ async function run() {
 
 
      //jobs by the specific user who applied a job
-     app.get('/applied-jobs/:email', async(req, res)=>{
+     app.get('/applied-jobs/:email', verifyToken, async(req, res)=>{
       const email = req.params.email;
+      if(req?.params.email !== req.user?.email){
+        return res.status(403).send({message: 'forbidden access'})
+      }
       const query = {email}
       const filter = req.query.filter;
      
