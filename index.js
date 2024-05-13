@@ -2,14 +2,19 @@ const express = require('express');
 const app = express()
 const cors = require('cors');
 require('dotenv').config()
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000
 
-//anasahammad
-//DZF90c3b8tm6c1oP
-app.use(express.json())
-app.use(cors())
 
+
+app.use(cors({
+  origin: ['http://localhost:5173'],
+  credentials: true,
+  optionsSuccessStatus: 200
+ }))
+app.use(express.json())
 
 
 
@@ -25,6 +30,11 @@ const client = new MongoClient(uri, {
   }
 });
 
+const cookieOptions = {
+  httpOnly: true,
+  secure : process.env.NODE_ENV === 'production'? 'none' : 'strict',
+  sameSite: process.env.NODE_ENV === 'production'
+}
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -34,10 +44,18 @@ async function run() {
     const appliedCollection = client.db('jobquest').collection('appliedJobs')
 
 
-    //pagination
-    app.get('/counts', async(req, res)=>{
-      const count = await jobsCollection.countDocuments()
-      res.send({count})
+    //jwt token
+    app.post('/jwt', async(req, res)=>{
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1d'})
+      res
+      .cookie('token', token, cookieOptions)
+      .send({success : true})
+    })
+
+    app.post('/logout', async(req, res)=>{
+      const user = req.body;
+      res.clearCookie('token', cookieOptions ).send({success : true})
     })
     //post a job in data
     app.post('/job', async(req, res)=>{
@@ -50,9 +68,11 @@ async function run() {
       const page = parseInt(req.query.page) - 1;
       const size = parseInt(req.query.size);
       const filter = req.query.filter;
-      const search = req.query.search
-      let query = {
-        jobTitle: {$regex : search, $options: 'i'}
+      const search = req?.query.search
+     
+      let query = {}
+      if(search) {
+        query.jobTitle = { $regex: search, $options: 'i' }
       }
       if(filter) query.category = filter
         const result = await jobsCollection.find(query).skip(page * size).limit(size).toArray()
@@ -123,6 +143,8 @@ async function run() {
       res.send(result)
     })
 
+
+
      //jobs by the specific user who applied a job
      app.get('/applied-jobs/:email', async(req, res)=>{
       const email = req.params.email;
@@ -139,8 +161,13 @@ async function run() {
       res.send(result)
     })
   
+    //pagination count
+    app.get('/counts', async(req, res)=>{
+      const count = await jobsCollection.countDocuments()
+      res.send({count})
+    })
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
