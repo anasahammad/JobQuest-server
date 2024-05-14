@@ -8,12 +8,11 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000
 
 
-
-app.use(cors({
+const corseOption = {
   origin: ['http://localhost:5173', 'https://jobquest-73ad6.web.app', 'https://jobquest-73ad6.firebaseapp.com'],
   credentials: true,
-  
- }))
+}
+app.use(cors(corseOption))
 app.use(express.json())
 app.use(cookieParser())
 
