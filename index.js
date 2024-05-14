@@ -10,16 +10,15 @@ const port = process.env.PORT || 5000
 
 
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: ['http://localhost:5173', 'https://jobquest-73ad6.web.app', 'https://jobquest-73ad6.firebaseapp.com'],
   credentials: true,
-  optionsSuccessStatus: 200
+  
  }))
 app.use(express.json())
 app.use(cookieParser())
 
 
  //Token verify
- 
  const verifyToken = (req, res, next)=>{
   const token = req?.cookies?.token;
   if(!token){
@@ -48,13 +47,13 @@ const client = new MongoClient(uri, {
 
 const cookieOptions = {
   httpOnly: true,
-  secure : process.env.NODE_ENV === 'production'? 'none' : 'strict',
-  sameSite: process.env.NODE_ENV === 'production'
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict"
 }
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const jobsCollection = client.db('jobquest').collection('alljobs')
     const appliedCollection = client.db('jobquest').collection('appliedJobs')
@@ -63,16 +62,18 @@ async function run() {
     //jwt token
     app.post('/jwt', async(req, res)=>{
       const user = req.body;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1d'})
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'})
       res
       .cookie('token', token, cookieOptions)
       .send({success : true})
     })
 
-    app.post('/logout', async(req, res)=>{
-      const user = req.body;
-      res.clearCookie('token', cookieOptions ).send({success : true})
-    })
+    app.post("/logout", async (req, res) => {
+      res
+        .clearCookie("token", { ...cookieOptions, maxAge: 0 })
+        .send({ success: true });
+    });
+
     //post a job in data
     app.post('/job', async(req, res)=>{
         const jobData = req.body;
@@ -185,6 +186,7 @@ async function run() {
   
     //pagination count
     app.get('/counts', async(req, res)=>{
+      
       const count = await jobsCollection.countDocuments()
       res.send({count})
     })
