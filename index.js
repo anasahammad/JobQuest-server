@@ -99,7 +99,7 @@ async function run() {
     //jobs by the specific owner
     app.get('/jobs/:email', verifyToken,  async(req, res)=>{
       const email = req.params.email;
-      if(req?.params.email !== req.user?.email){
+      if( req.user?.email !== email){
         return res.status(403).send({message: 'forbidden access'})
       }
       const query = {'jobOwner.email' : email}
@@ -167,10 +167,10 @@ async function run() {
      //jobs by the specific user who applied a job
      app.get('/applied-jobs/:email', verifyToken, async(req, res)=>{
       const email = req.params.email;
-      if(req?.params.email !== req.user?.email){
+      if( req.user?.email !== email){
         return res.status(403).send({message: 'forbidden access'})
       }
-      const query = {email}
+      const query = {email: email}
       const filter = req.query.filter;
      
       if(filter) query.category = filter
