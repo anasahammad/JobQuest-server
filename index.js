@@ -250,7 +250,7 @@ async function run() {
       })
 
       //update user role
-    app.patch('/users/update/:email', verifyToken,  async(req, res)=>{
+    app.patch('/users/update/:email',   async(req, res)=>{
       const email = req.params.email;
       const user = req.body;
       const query = {email : email}
@@ -264,11 +264,23 @@ async function run() {
     })
 
     //get all the users
-    app.get('/users', verifyToken, verifyAdmin, async(req, res)=>{
+    app.get('/users',  async(req, res)=>{
       const user = req.body;
       const result = await usersCollection.find().toArray()
       res.send(result)
     })
+
+    //admin stats
+    app.get('/admin-stats', async(req, res)=>{
+      const users = await usersCollection.estimatedDocumentCount()
+      const jobs = await jobsCollection.estimatedDocumentCount()
+      const appliedJobs = await appliedCollection.estimatedDocumentCount()
+      
+      res.send({
+        users, jobs, appliedJobs
+      })
+    })
+    
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
