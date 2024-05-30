@@ -56,8 +56,32 @@ async function run() {
 
     const jobsCollection = client.db('jobquest').collection('alljobs')
     const appliedCollection = client.db('jobquest').collection('appliedJobs')
+    const usersCollection = client.db('jobquest').collection('users')
 
 
+
+    //verifyAdmin Middleware
+    const verifyAdmin =async (req, res, next)=>{
+      const user = req.user
+      const query = {email : user?.email}
+      const result = await usersCollection.findOne(query)
+      if(!result || result.role !== 'admin'){
+        return res.status(401).send({message: "Unauthorized Access"})
+      }
+      next()
+
+    }
+    //verifyHost MiddleWare
+    const verifyHost =async (req, res, next)=>{
+      const user = req.user
+      const query = {email : user?.email}
+      const result = await usersCollection.findOne(query)
+      if(!result || result.role !== 'host'){
+        return res.status(401).send({message: "Unauthorized Access"})
+      }
+      next()
+
+    }
     //jwt token
     app.post('/jwt', async(req, res)=>{
       const user = req.body;
@@ -74,7 +98,7 @@ async function run() {
     });
 
     //post a job in data
-    app.post('/job', async(req, res)=>{
+    app.post('/job',   async(req, res)=>{
         const jobData = req.body;
         const result = await jobsCollection.insertOne(jobData)
         res.send(result)
@@ -97,7 +121,7 @@ async function run() {
     })
 
     //jobs by the specific owner
-    app.get('/jobs/:email', verifyToken,  async(req, res)=>{
+    app.get('/jobs/:email', verifyToken, verifyHost,  async(req, res)=>{
       const email = req.params.email;
       if( req.user?.email !== email){
         return res.status(403).send({message: 'forbidden access'})
@@ -108,7 +132,7 @@ async function run() {
     })
 
     //get a job by id
-    app.get('/job/:id', async (req, res) => {
+    app.get('/job/:id',  async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await jobsCollection.findOne(query)
@@ -123,7 +147,7 @@ async function run() {
     })
 
     //update a specific job
-    app.patch('/job/:id', async(req, res)=>{
+    app.patch('/job/:id',   async(req, res)=>{
       const id = req.params.id;
       const jobData = req.body;
       console.log(jobData);
@@ -188,6 +212,62 @@ async function run() {
       
       const count = await jobsCollection.countDocuments()
       res.send({count})
+    })
+
+    app.put('/user', async(req, res)=>{
+      const user = req.body;
+      const query = {email : user?.email}
+      const isExist = await usersCollection.findOne(query)
+      if(isExist){
+        if(user.status === "Requested"){
+          const result = await usersCollection.updateOne(query, {$set: {status : user?.status}})
+          return res.send(result)
+        }
+        else{
+          return res.send(isExist)
+        }
+      }
+      if(isExist) return res.send(isExist)
+      const options = {upsert : true}
+      const updateDoc = {
+        $set : {
+          ...user,
+        }
+      }
+      const result = await usersCollection.updateOne(query, updateDoc, options)
+      res.send(result)
+
+    })
+
+    //get a single user 
+      //get user
+      app.get('/users/:email', async(req, res)=>{
+        const email = req.params.email;
+        
+        const query = {email : email}
+        const result = await usersCollection.findOne(query)
+        res.send(result)
+      })
+
+      //update user role
+    app.patch('/users/update/:email', verifyToken,  async(req, res)=>{
+      const email = req.params.email;
+      const user = req.body;
+      const query = {email : email}
+      const updatedDoc = {
+        $set: {
+          ...user
+        }
+      }
+      const result = await usersCollection.updateOne(query, updatedDoc)
+      res.send(result)
+    })
+
+    //get all the users
+    app.get('/users', verifyToken, verifyAdmin, async(req, res)=>{
+      const user = req.body;
+      const result = await usersCollection.find().toArray()
+      res.send(result)
     })
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
